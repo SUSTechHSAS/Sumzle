@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sumzle</title>
+    <script src="https://cdn.staticfile.net/Chart.js/3.9.1/chart.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* Mainly By Gemini 2.5 pro 03-14 */
+        :root {
+            --font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            
+            --color-background: #f8f8f8;
+            --color-surface: #ffffff;
+            --color-text: #242424;
+            --color-text-secondary: #5c5c5c;
+            --color-border: #e0e0e0;
+            --color-border-light: #f0f0f0;
+            --color-divider: #eaeaea;
+            
+            --color-correct: #107c10; 
+            --color-present: #c19c00; 
+            --color-absent: #7a7574;  
+            --color-key-feedback-text: #ffffff;
+
+            --color-easy: #6ECB63; 
+            --color-medium: #FFC107; 
+            --color-hard: #D32F2F;
+
+            --fluent-blue: #0078d4;
+            --fluent-blue-hover: #005a9e;
+            --fluent-blue-active: #004578;
+
+            --tile-border-radius: 6px;
+            --key-border-radius: 6px; 
+            --modal-border-radius: 8px; 
+            --button-border-radius: 5px;
+
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-s: 0 2px 4px rgba(0,0,0,0.06);
+            --shadow-m: 0 4px 8px rgba(0,0,0,0.08), 0 0 1px rgba(0,0,0,0.05);
+            --shadow-l: 0 8px 16px rgba(0,0,0,0.1), 0 0 2px rgba(0,0,0,0.06);
+            --shadow-xl: 0 12px 24px rgba(0,0,0,0.12), 0 0 3px rgba(0,0,0,0.08);
+        }
+        body {
+            font-family: var(--font-family); margin: 0; padding: 0; background-color: var(--color-background); color: var(--color-text);
+            display: flex; flex-direction: column; align-items: center; height: 100vh; touch-action: manipulation; 
+            overflow-x: hidden; 
+            overflow-y: auto; 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        header {
+            width: 100%; padding: 10px 0; border-bottom: 1px solid var(--color-divider); text-align: center; font-weight: 600; 
+            font-size: 1.5rem; 
+            position: relative; display: flex;
+            justify-content: center; align-items: center; background-color: var(--color-surface); 
+            min-height: 60px; box-sizing: border-box; 
+            box-shadow: var(--shadow-s);
+        }
+        .header-title { 
+            position: absolute; 
+            left: 50%;
+            transform: translateX(-50%);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            color: var(--color-text);
+            font-weight: 600;
+        }
+        .header-buttons-container { 
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 100; 
+        }
+        .header-buttons {
+            display: flex;
+            align-items: center; 
+            gap: 8px; 
+            transition: opacity 0.25s ease-out, transform 0.25s ease-out, visibility 0.25s;
+        }
+        #menuToggleBtn { display: none; } 
+
+        @media (max-width: 450px) { 
+            header { min-height: 60px; padding: 6px 0; }
+            .header-buttons {
+                opacity: 0;
+                visibility: hidden;
+                transform: translateY(-10px) scaleY(0.95);
+                transform-origin: top right;
+                position: absolute;
+                top: calc(100% + 5px); 
+                right: 0;
+                flex-direction: column;
+                background-color: var(--color-surface);
+                border: 1px solid var(--color-border);
+                border-radius: var(--modal-border-radius);
+                box-shadow: var(--shadow-m);
+                padding: 8px;
+                z-index: 999; 
+            }
+            .header-buttons.show-menu { 
+                display: flex; 
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(0) scaleY(1);
+            } 
+            #menuToggleBtn { 
+                display: flex; 
+                background: none; border: none; font-size: 1.6rem; cursor: pointer; color: var(--color-text-secondary);
+                align-items: center; justify-content: center; width: 44px; height: 44px;
+                transition: transform 0.2s ease-out, background-color 0.2s ease;
+                border-radius: var(--button-border-radius);
+            }
+            #menuToggleBtn:hover { background-color: rgba(0,0,0,0.05); }
+            #menuToggleBtn.active { transform: rotate(90deg); }
+             .icon-btn {
+                width: 100%; 
+                justify-content: flex-start; 
+                padding: 10px 12px; 
+                font-size: 1rem;
+                height: auto;
+            }
+            .icon-btn:not(:last-child) { margin-bottom: 4px; }
+        }
+        .icon-btn {
+            background: none; border: none; font-size: 1.5rem; 
+            cursor: pointer; color: var(--color-text-secondary); 
+            display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; 
+            transition: transform 0.1s ease-out, color 0.2s ease, background-color 0.2s ease;
+            border-radius: var(--button-border-radius);
+        }
+        .icon-btn:hover { color: var(--color-text); background-color: rgba(0,0,0,0.05); }
+        .icon-btn:active { transform: scale(0.92); }
+
+        .difficulty-indicator { 
+            position: absolute; left: 15px; 
+            top: 50%; transform: translateY(-50%); 
+            font-size: 0.7rem; 
+            padding: 5px 12px; color: white; border-radius: 15px; 
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .difficulty-easy { background-color: var(--color-easy); }
+        .difficulty-medium { background-color: var(--color-medium); }
+        .difficulty-hard { background-color: var(--color-hard); }
+        
+        .game-container {
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+            flex-grow: 1; width: 100%; 
+            padding: 15px; box-sizing: border-box; 
+            overflow-x: hidden; 
+        }
+        .board-wrapper { 
+            width: 100%;
+            max-width: 100vw; 
+            overflow-x: auto;
+            margin-bottom: 20px; 
+            flex-shrink: 0;
+            -webkit-overflow-scrolling: touch; 
+        }
+        .board { 
+            display: grid; gap: 6px; 
+            min-width: 100%; 
+            width: max-content; 
+            padding: 2px; 
+        }
+        .row { display: grid; gap: 6px; min-width: max-content; }
+        .tile {
+            aspect-ratio: 1; border: 1px solid var(--color-border); display: flex; justify-content: center; align-items: center;
+            font-size: 1.8rem; 
+            font-weight: 600; border-radius: var(--tile-border-radius);
+            transition: transform 0.25s ease, background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease; 
+            box-sizing: border-box; overflow: hidden; text-overflow: clip; color: var(--color-text); background-color: var(--color-surface); 
+            min-height: 48px; height: auto; min-width: 48px; 
+            box-shadow: var(--shadow-xs);
+            position: relative; 
+            z-index: 1;
+        }
+        @media (max-width: 500px) { 
+            .tile { min-height: 42px; font-size: 1.6rem; min-width: 42px; }
+        }
+        .tile.filled { border-color: #b0b0b0; box-shadow: var(--shadow-s); } 
+        .tile.pop { animation: popIn 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
+        
+        .tile.flip-reveal { animation: flip-reveal 0.6s cubic-bezier(0.3, 0.95, 0.7, 1.2) forwards; }
+        @keyframes flip-reveal { 0% { transform: rotateX(0deg); } 50% { transform: rotateX(90deg); } 100% { transform: rotateX(0deg); } }
+        
+        .tile.win-dance { animation: dance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+        @keyframes dance {
+            0%, 100% { transform: translateY(0) scale(1); }
+            20% { transform: translateY(-10px) scale(1.1) rotate(-3deg); }
+            40% { transform: translateY(5px) scale(0.95) rotate(3deg); }
+            60% { transform: translateY(-5px) scale(1.05) rotate(-2deg); }
+            80% { transform: translateY(2px) scale(0.98) rotate(1deg); }
+        }
+        .correct { background-color: var(--color-correct) !important; color: var(--color-key-feedback-text) !important; border-color: var(--color-correct) !important; box-shadow: none !important; }
+        .present { background-color: var(--color-present) !important; color: var(--color-key-feedback-text) !important; border-color: var(--color-present) !important; box-shadow: none !important;}
+        .absent { background-color: var(--color-absent) !important; color: var(--color-key-feedback-text) !important; border-color: var(--color-absent) !important; box-shadow: none !important;}
+        
+        .keyboard { display: flex; flex-direction: column; width: 100%; max-width: 520px; gap: 6px; margin-top: auto; padding-bottom: 10px; }
+        .keyboard-row { display: flex; justify-content: center; gap: 5px; width: 100%; }
+        .key {
+            height: 52px; 
+            border-radius: var(--key-border-radius); 
+            background-color: #e9e9e9; 
+            font-size: 1.1rem; font-weight: 500;
+            display: flex; justify-content: center; align-items: center; cursor: pointer; user-select: none; flex: 1;
+            transition: background-color 0.15s ease, transform 0.1s ease-out, box-shadow 0.15s ease, border-color 0.15s ease; 
+            box-shadow: var(--shadow-xs); 
+            color: var(--color-text); 
+            border: 1px solid #dcdcdc;
+            position: relative; 
+            z-index: 1;
+            overflow: hidden;
+        }
+        .key::before {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 0;
+            z-index: -1;
+            transition: height 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            border-radius: inherit;
+        }
+
+        .key:not(.correct):not(.present):not(.absent):hover {
+            background-color: #dddddd;
+        }
+        .key:not(.correct):not(.present):not(.absent):active,
+        .key.pressed:not(.correct):not(.present):not(.absent) { 
+            background-color: #d0d0d0; 
+            transform: scale(0.97) translateY(1px); 
+            box-shadow: none;
+        }
+
+        .key.wide { flex: 1.5; font-size: 0.9rem;}
+        .key.super-wide { 
+            background-color: var(--fluent-blue); color: white; border-color: var(--fluent-blue-hover);
+        }
+        .key.super-wide:not(.correct):not(.present):not(.absent):hover { 
+            background-color: var(--fluent-blue-hover); 
+        }
+        .key.super-wide:not(.correct):not(.present):not(.absent):active { 
+            background-color: var(--fluent-blue-active); 
+        }
+        
+        .key.correct, .key.present, .key.absent {
+            background-color: transparent !important;
+            color: var(--color-key-feedback-text) !important;
+        }
+        .key.correct { 
+            border-color: var(--color-correct) !important; 
+            animation: keyGreenPulse 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+        .key.present { border-color: var(--color-present) !important; }
+        .key.absent { border-color: var(--color-absent) !important; opacity: 0.9; }
+
+        .key.correct::before { background-color: var(--color-correct); height: 100%; }
+        .key.present::before { background-color: var(--color-present); height: 100%; }
+        .key.absent::before { background-color: var(--color-absent); height: 100%; }
+
+        @keyframes keyGreenPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08) translateY(-1px); }
+        }
+        .key.disabled-permanently {
+            opacity: 0.5 !important; pointer-events: none !important;
+            background-color: #cccccc !important; color: #777777 !important;
+            border-color: #bbbbbb !important;
+        }
+        .key.disabled-permanently::before { display: none; }
+
+        .message {
+            position: fixed; top: 15%; 
+            left: 50%; transform: translateX(-50%) translateY(-20px);
+            background-color: rgba(30, 30, 30, 0.92); 
+            backdrop-filter: blur(3px);
+            color: white; padding: 14px 25px; border-radius: var(--modal-border-radius);
+            z-index: 1001; opacity: 0; font-weight: 500; box-shadow: var(--shadow-l);
+            visibility: hidden; 
+            transition: opacity 0.3s cubic-bezier(0.215, 0.61, 0.355, 1), transform 0.3s cubic-bezier(0.215, 0.61, 0.355, 1), visibility 0s 0.3s;
+        }
+        .message.show-message {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+            visibility: visible;
+            transition: opacity 0.3s cubic-bezier(0.215, 0.61, 0.355, 1), transform 0.3s cubic-bezier(0.215, 0.61, 0.355, 1), visibility 0s 0s;
+        }
+        
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.4); 
+            backdrop-filter: blur(5px); 
+            z-index: 1000; justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.3s ease-out, backdrop-filter 0.3s ease-out;
+        }
+        .modal.show { display: flex; opacity: 1; }
+        
+        .modal-content {
+            background-color: var(--color-surface); padding: 28px; 
+            border-radius: var(--modal-border-radius); max-width: 90%; width: 500px;
+            text-align: center; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-xl);
+            opacity: 0;
+            transform: translateY(20px) scale(0.98); 
+            transition: opacity 0.3s cubic-bezier(0.25, 0.1, 0.25, 1.25), transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1.25); 
+        }
+        .modal.show .modal-content {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .modal h2 { margin-top: 0; margin-bottom: 20px; color: var(--color-text); font-size: 1.7rem; font-weight: 600;}
+        .modal p { color: var(--color-text-secondary); font-size: 1rem; line-height: 1.6; margin-bottom: 25px;}
+        
+        .modal button {
+            color: white; border: none; padding: 12px 24px; border-radius: var(--button-border-radius); 
+            font-weight: 500; font-size: 0.95rem; cursor: pointer; margin-top: 15px; 
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            min-width: 120px;
+        }
+        .modal button.primary-btn { background-color: var(--fluent-blue); }
+        .modal button.primary-btn:hover { background-color: var(--fluent-blue-hover); box-shadow: var(--shadow-xs); }
+        .modal button.primary-btn:active { background-color: var(--fluent-blue-active); transform: scale(0.97); }
+
+        .modal button.secondary-btn {
+            background-color: #e9e9e9; color: var(--color-text); border: 1px solid var(--color-border);
+        }
+        .modal button.secondary-btn:hover { background-color: #dddddd; border-color: #c9c9c9; box-shadow: var(--shadow-xs); }
+        .modal button.secondary-btn:active { background-color: #d0d0d0; transform: scale(0.97); }
+
+        .modal button.danger-btn { background-color: var(--color-hard) !important; }
+        .modal button.danger-btn:hover { background-color: #B71C1C !important; box-shadow: var(--shadow-xs); }
+        .modal button.danger-btn:active { background-color: #A50F0F !important; transform: scale(0.97);}
+        
+        #gameOverTitle { font-size: 2rem; font-weight: 600; }
+        #gameOverMessage { font-size: 1.1rem; margin-bottom: 25px; color: var(--color-text-secondary); }
+        .stats-container { display: flex; justify-content: space-around; width: 100%; margin: 30px 0; }
+        .stat { display: flex; flex-direction: column; align-items: center; }
+        .stat-number { font-size: 2.2rem; font-weight: 600; color: var(--color-text); }
+        .stat-label { font-size: 0.8rem; text-transform: uppercase; color: var(--color-text-secondary); letter-spacing: 0.5px; }
+        
+        .difficulty-selector { display: flex; justify-content: space-between; margin: 25px 0; width: 100%; gap: 10px; }
+        .difficulty-btn {
+            padding: 12px 10px; border-radius: var(--button-border-radius); cursor: pointer; flex: 1; text-align: center;
+            font-weight: 500; color: white; font-size: 0.9rem;
+            border: 2px solid transparent; 
+            opacity: 0.9; 
+            transition: transform 0.18s ease, box-shadow 0.22s ease, opacity 0.22s ease, border-color 0.22s ease, background-color 0.22s ease;
+        }
+        .difficulty-btn:not(.selected):hover {
+            opacity: 1;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-s);
+        }
+        .difficulty-btn.selected {
+            opacity: 1;
+            transform: scale(1.02) translateY(-2px); 
+            border-width: 2px; 
+            font-weight: 600;
+        }
+        .difficulty-btn.easy { background-color: var(--color-easy); }
+        .difficulty-btn.medium { background-color: var(--color-medium); }
+        .difficulty-btn.hard { background-color: var(--color-hard); }
+        .difficulty-btn.easy.selected { border-color: #58B052; box-shadow: 0 3px 10px rgba(110, 203, 99, 0.3); }
+        .difficulty-btn.medium.selected { border-color: #E0AB00; box-shadow: 0 3px 10px rgba(255, 193, 7, 0.3); }
+        .difficulty-btn.hard.selected { border-color: #B71C1C; box-shadow: 0 3px 10px rgba(211, 47, 47, 0.3); }
+
+        #exportImageBtn { background-color: var(--color-present); margin-left: 10px;}
+        #shareLevelBtn { margin-left: 10px;} 
+
+        .flying-char-effect {
+            position: fixed; z-index: 9999; pointer-events: none;
+            transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1.5), opacity 0.35s ease-out, width 0.35s ease-out, height 0.35s ease-out;
+            opacity: 1; display: flex; align-items: center; justify-content: center;
+            box-shadow: var(--shadow-m); 
+        }
+         #confettiOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 10000; 
+        }
+        .confetti-piece {
+            position: absolute; 
+            pointer-events: none;
+            transition-property: transform, top, opacity;
+            transition-timing-function: cubic-bezier(0.1, 0.5, 0.3, 1), cubic-bezier(0.1, 0.25, 0.3, 1), ease-in;
+        }
+        
+        .invalid-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(2px); }
+            30%, 50%, 70% { transform: translateX(-4px); } 40%, 60% { transform: translateX(4px); }
+        }
+        textarea#levelCodeInput {
+            width: 95%; margin-bottom: 15px; padding: 12px; border-radius: var(--button-border-radius); 
+            border: 1px solid var(--color-border); font-size: 0.95rem;
+            background-color: var(--color-surface); color: var(--color-text);
+        }
+        textarea#levelCodeInput:focus {
+            border-color: var(--fluent-blue); box-shadow: 0 0 0 2px rgba(0,120,212,0.2); outline: none;
+        }
+        .tile.tile-new-game-appear {
+            opacity: 0;
+            transform: scale(0.5) translateY(10px);
+            animation: tileNewGameAppearAnimation 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes tileNewGameAppearAnimation {
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <div id="difficultyDisplay" class="difficulty-indicator difficulty-medium">中等</div>
+        <div class="header-title">SUMZLE</div>
+        <div class="header-buttons-container">
+            <button id="menuToggleBtn">☰</button>
+            <div class="header-buttons" id="headerButtonsGroup">
+                <button class="icon-btn" id="loadLevelBtn" title="载入关卡">🔗</button>
+                <button class="icon-btn" id="statsBtn" title="统计">📊</button>
+                <button class="icon-btn" id="settingsBtn" title="设置">⚙️</button>
+                <button class="icon-btn" id="restartBtn" title="重新开始/投降">🔄</button>
+            </div>
+        </div>
+    </header>
+    <div id="confettiOverlay"></div>
+    <div class="game-container" id="gameContainer">
+        <div class="board-wrapper">
+            <div class="board" id="board"></div>
+        </div>
+        <div class="keyboard" id="keyboard"></div>
+    </div>
+
+    <div class="message" id="message"></div>
+    <div class="modal" id="gameOverModal">
+        <div class="modal-content">
+            <h2 id="gameOverTitle"></h2><p id="gameOverMessage"></p>
+            <div class="stats-container">
+                <div class="stat"><div class="stat-number" id="gamesPlayed">0</div><div class="stat-label">已玩</div></div>
+                <div class="stat"><div class="stat-number" id="gamesWon">0</div><div class="stat-label">获胜</div></div>
+                <div class="stat"><div class="stat-number" id="currentStreak">0</div><div class="stat-label">连胜</div></div>
+            </div>
+            <button id="newGameBtn" class="primary-btn">开始新游戏</button>
+            <button id="exportImageBtn" class="secondary-btn" style="display:none;">导出图片</button>
+            <button id="shareLevelBtn" class="secondary-btn">分享关卡</button>
+        </div>
+    </div>
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h2>设置</h2><h3>难度选择</h3>
+            <div class="difficulty-selector">
+                <div class="difficulty-btn easy" data-difficulty="easy">简单<br>(8次)</div>
+                <div class="difficulty-btn medium selected" data-difficulty="medium">中等<br>(6次)</div>
+                <div class="difficulty-btn hard" data-difficulty="hard">困难<br>(4次)</div>
+            </div>
+            <button id="closeSettingsBtn" class="primary-btn">确定</button>
+        </div>
+    </div>
+    <div class="modal" id="statsModal">
+        <div class="modal-content">
+            <h2>游戏统计</h2>
+            <div style="width: 100%; max-width: 450px; margin: 20px auto;"><canvas id="statsChart"></canvas></div>
+            <button id="clearStatsBtn" class="danger-btn">清空统计数据</button>
+            <button id="closeStatsBtn" class="secondary-btn" style="margin-top: 10px;">关闭</button>
+        </div>
+    </div>
+    <div class="modal" id="loadLevelModal">
+        <div class="modal-content">
+            <h2>载入分享关卡</h2>
+            <textarea id="levelCodeInput" placeholder="在此处粘贴关卡代码..." rows="3"></textarea>
+            <button id="submitLoadLevelBtn" class="primary-btn">载入</button>
+            <button id="closeLoadLevelModalBtn" class="secondary-btn" style="margin-left: 10px;">取消</button>
+        </div>
+    </div>
+    <div class="modal" id="surrenderModal">
+        <div class="modal-content">
+            <h2>放弃挑战？</h2>
+            <p>确定要放弃当前的游戏吗？这将会被记录为一次失败。</p>
+            <button id="confirmSurrenderBtn" class="danger-btn">确认放弃</button>
+            <button id="cancelSurrenderBtn" class="secondary-btn" style="margin-left: 10px;">继续挑战</button>
+        </div>
+    </div>
+    <div class="modal" id="confirmClearStatsModal">
+        <div class="modal-content">
+            <h2>确认操作</h2>
+            <p>确定要清空所有统计数据吗？此操作无法撤销。</p>
+            <button id="executeClearStatsBtn" class="danger-btn">确认清空</button>
+            <button id="cancelClearStatsBtn" class="secondary-btn" style="margin-left: 10px;">取消</button>
+        </div>
+    </div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const difficultySetting = {
+        easy: { attempts: 8, name: "简单", class: "difficulty-easy" },
+        medium: { attempts: 6, name: "中等", class: "difficulty-medium" },
+        hard: { attempts: 4, name: "困难", class: "difficulty-hard" }
+    };
+    let currentDifficulty = "medium";
+    let ROWS = difficultySetting[currentDifficulty].attempts;
+    const MAX_EQUATION_LENGTH = 11; 
+    const MIN_EQUATION_LENGTH = 3;
+    let gameActive = true;
+    let currentRow = 0;
+    let currentCol = 0;
+    let guessedEquation = [];
+    let targetEquation = '';
+    let COLS = 0;
+    let isCustomLevel = false; 
+    let stats = {
+        total: { gamesPlayed: 0, gamesWon: 0, currentStreak: 0, bestStreak: 0 },
+        byDifficulty: { easy: { gamesPlayed: 0, gamesWon: 0 }, medium: { gamesPlayed: 0, gamesWon: 0 }, hard: { gamesPlayed: 0, gamesWon: 0 } }
+    };
+    const initialStats = JSON.parse(JSON.stringify(stats)); 
+    let statsChartInstance = null;
+
+    const XOR_KEY = "SUMZLECRYPTLVL";
+    const SHARE_SEPARATOR = "::DIFEQ::";
+
+    function displayChar(char) {
+        if (char === '*') return '×';
+        if (char === '/') return '÷';
+        return char;
+    }
+
+    function encodeLevel(eq, difficulty) {
+        const combined = `${difficulty}${SHARE_SEPARATOR}${eq}`;
+        let xored = "";
+        for (let i = 0; i < combined.length; i++) {
+            xored += String.fromCharCode(combined.charCodeAt(i) ^ XOR_KEY.charCodeAt(i % XOR_KEY.length));
+        }
+        try { return btoa(xored); } catch(e) { console.error("BTOA failed", e); return null; }
+    }
+
+    function decodeLevel(encodedLevel) {
+        try {
+            let xored = atob(encodedLevel);
+            let original = "";
+            for (let i = 0; i < xored.length; i++) {
+                original += String.fromCharCode(xored.charCodeAt(i) ^ XOR_KEY.charCodeAt(i % XOR_KEY.length));
+            }
+            const parts = original.split(SHARE_SEPARATOR);
+            if (parts.length === 2 && difficultySetting[parts[0]]) {
+                return { difficulty: parts[0], equation: parts[1] };
+            }
+            return null;
+        } catch (e) {
+            console.error("Failed to decode level:", e);
+            return null;
+        }
+    }
+
+    if (localStorage.getItem('sumzleStats')) {
+        const savedStats = JSON.parse(localStorage.getItem('sumzleStats'));
+        if (savedStats.byDifficulty) stats = savedStats;
+        else {
+            stats.total.gamesPlayed = savedStats.gamesPlayed || 0; stats.total.gamesWon = savedStats.gamesWon || 0;
+            stats.total.currentStreak = savedStats.currentStreak || 0; stats.total.bestStreak = savedStats.bestStreak || 0;
+        }
+    }
+    if (localStorage.getItem('sumzleDifficulty')) {
+        const savedDiff = localStorage.getItem('sumzleDifficulty');
+        if (difficultySetting[savedDiff]) {
+            currentDifficulty = savedDiff;
+        }
+        ROWS = difficultySetting[currentDifficulty].attempts;
+    }
+
+    const validChars = '0123456789+-*/%^=()![]>';
+    window.factorial = function(n) {
+        n = Number(n);
+        if (isNaN(n) || n < 0 || n !== Math.floor(n)) throw new Error("Factorial non-neg int.");
+        if (n > 10) throw new Error("Factorial max 10.");
+        if (n === 0 || n === 1) return 1;
+        let result = 1; for (let i = 2; i <= n; i++) result *= i; return result;
+    };
+
+    function updateDifficultyDisplay() {
+        const difficultyElement = document.getElementById('difficultyDisplay');
+        difficultyElement.className = 'difficulty-indicator'; 
+        
+        difficultyElement.classList.add(difficultySetting[currentDifficulty].class);
+        difficultyElement.textContent = difficultySetting[currentDifficulty].name;
+        
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.classList.toggle('selected', btn.dataset.difficulty === currentDifficulty);
+        });
+    }
+
+    function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+    
+    function generateNumberSegment() { return String(getRandomInt(1, 20)); }
+    
+    function generateParenthesizedBinaryOpSegment() {
+        const a = getRandomInt(1,10); let b = getRandomInt(1,10);
+        const ops = ['+','-','*','%','^','^']; 
+        const op = ops[Math.floor(Math.random()*ops.length)];
+
+        if (op === '^') {
+            const typeOfPower = Math.random();
+            if (typeOfPower < 0.6) { 
+                 b = getRandomInt(2,3); 
+                 return `(${a}^${b})`;
+            } else { 
+                const baseForSqrt = getRandomInt(2, 5); 
+                return `(${baseForSqrt*baseForSqrt}^(1/2))`;
+            }
+        }
+        if (op === '-' && a < b) return `(${b}${op}${a})`;
+        if (op === '%' && b === 0) b = getRandomInt(1,5);
+        return `(${a}${op}${b})`;
+    }
+
+    function generateFactorialSegment() { return `${getRandomInt(1,5)}!`;}
+    function generateFloorDivSegment() { return `[${getRandomInt(1,10)}/${getRandomInt(2,5)}]`;}
+    
+    const segmentGenerators = [
+        generateNumberSegment,
+        generateParenthesizedBinaryOpSegment, 
+        generateFactorialSegment,
+        generateFloorDivSegment,
+    ];
+
+    function isSimpleSegment(expr) {
+        return /^\d+$|^(\d+)!$/.test(expr); 
+    }
+    
+    function isRedundantParentheses(segment) {
+        if (segment.startsWith("(") && segment.endsWith(")")) {
+            const inner = segment.substring(1, segment.length -1);
+            if (isSimpleSegment(inner)) return true; 
+            if (inner.startsWith("(") && inner.endsWith(")") && checkBrackets(inner)) {
+                 try {
+                    const outerVal = safeEval(segment);
+                    const innerVal = safeEval(inner);
+                    if (Math.abs(outerVal - innerVal) < 0.0001) return true;
+                } catch (e) { }
+            }
+        }
+        return false;
+    }
+
+    function generateSingleExpressionSegment() {
+        let segment = "";
+        let attempts = 0;
+        do {
+            const generator = segmentGenerators[Math.floor(Math.random() * segmentGenerators.length)];
+            segment = generator();
+            attempts++;
+            if (attempts > 20) return String(getRandomInt(1,10)); 
+
+            if (isRedundantParentheses(segment)) {
+                 segment = segment.substring(1, segment.length -1); 
+            }
+        } while (segment === "" || isRedundantParentheses(segment)); 
+        return segment;
+    }
+    
+    function generateComplexLHS() {
+        let expr = generateSingleExpressionSegment();
+        if (Math.random() < 0.5 && expr.length < MAX_EQUATION_LENGTH - 5) {
+            const nextSegment = generateSingleExpressionSegment();
+            const ops = ['+','-','*','%']; const op = ops[Math.floor(Math.random()*ops.length)];
+            
+            const shouldWrap = (segmentStr, operatorToApply) => {
+                if (isSimpleSegment(segmentStr)) return false;
+                if ((segmentStr.startsWith('(') && segmentStr.endsWith(')') && checkBrackets(segmentStr.substring(1, segmentStr.length - 1))) ||
+                    (segmentStr.startsWith('[') && segmentStr.endsWith(']') && checkBrackets(segmentStr.substring(1, segmentStr.length - 1)))) {
+                    return false;
+                }
+                if (operatorToApply === '*' || operatorToApply === '/' || operatorToApply === '%' || operatorToApply === '^') {
+                    return true;
+                }
+                return false;
+            };
+
+            const exprNeedsParens = shouldWrap(expr, op);
+            const nextNeedsParens = shouldWrap(nextSegment, op);
+
+            if (Math.random() < 0.5) { 
+                expr = `${exprNeedsParens ? '('+expr+')' : expr}${op}${nextNeedsParens ? '('+nextSegment+')' : nextSegment}`;
+            } else { 
+                expr = `${nextNeedsParens ? '('+nextSegment+')' : nextSegment}${op}${exprNeedsParens ? '('+expr+')' : expr}`;
+            }
+        }
+        try {
+            const val = safeEval(expr);
+            if (!Number.isInteger(val) || expr.includes('.')) return String(getRandomInt(1,30));
+        } catch(e) { return String(getRandomInt(1,30)); }
+        return expr;
+    }
+    
+    function generateFallbackEquation() { const a = getRandomInt(1,9); return `${a}+${a}=${a+a}`; }
+
+    function generateRandomEquation() {
+        let equation = ''; let attempts = 0; const maxAttempts = 60;
+        while (attempts < maxAttempts) {
+            const opChance = Math.random();
+            let mainOperator;
+
+            if (currentDifficulty === "hard" && !isCustomLevel) {
+                mainOperator = '=';
+            } else {
+                if (opChance < 0.85) mainOperator = '=';      
+                else mainOperator = '>';       
+            }
+
+            let expr1_str, expr2_str;
+            if (mainOperator === '=') {
+                expr1_str = generateComplexLHS();
+                try {
+                    const val1 = safeEval(expr1_str);
+                    if (!Number.isInteger(val1) || expr1_str.includes('.')) { attempts++; continue; }
+                    expr2_str = String(val1);
+                } catch (e) { attempts++; continue; }
+            } else { 
+                expr1_str = generateSingleExpressionSegment();
+                expr2_str = generateSingleExpressionSegment();
+                try {
+                    let val1 = safeEval(expr1_str); let val2 = safeEval(expr2_str);
+                    if (!(val1 > val2)) {
+                        if (val2 > val1) { [expr1_str, expr2_str] = [expr2_str, expr1_str]; } 
+                        else { expr1_str = String(val1 + getRandomInt(1,3)); if(expr1_str.includes('.')){attempts++; continue;} } 
+                    }
+                } catch (e) { attempts++; continue; }
+            }
+            if (expr1_str.includes('.') || expr2_str.includes('.')) { attempts++; continue; }
+            equation = `${expr1_str}${mainOperator}${expr2_str}`;
+            if (equation.length >= MIN_EQUATION_LENGTH && equation.length <= MAX_EQUATION_LENGTH) {
+                if (isValidEquation(equation.split(''), true)) break;
+            }
+            attempts++;
+        }
+        if (attempts >= maxAttempts || !equation || equation.length > MAX_EQUATION_LENGTH) equation = generateFallbackEquation();
+        return equation;
+    }
+
+    function initBoard() {
+        const board = document.getElementById('board'); board.innerHTML = '';
+        board.style.gridTemplateRows = `repeat(${ROWS}, 1fr)`;
+        for (let i = 0; i < ROWS; i++) {
+            const rowDiv = document.createElement('div'); rowDiv.className = 'row';
+            rowDiv.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
+            for (let j = 0; j < COLS; j++) {
+                const tileDiv = document.createElement('div'); 
+                tileDiv.className = 'tile tile-new-game-appear'; 
+                tileDiv.id = `tile-${i}-${j}`;
+                tileDiv.style.animationDelay = `${i * 0.05 + j * 0.02}s`;
+                rowDiv.appendChild(tileDiv);
+            }
+            board.appendChild(rowDiv);
+        }
+        setTimeout(() => {
+            document.querySelectorAll('.tile-new-game-appear').forEach(t => t.classList.remove('tile-new-game-appear'));
+        }, ROWS * 0.05 * 1000 + COLS * 0.02 * 1000 + 500);
+    }
+    function initKeyboard() {
+        const keyboard = document.getElementById('keyboard'); keyboard.innerHTML = '';
+        const keyLayout = [
+            ['1','2','3','4','5','6','7','8','9','0'], ['+','-','×','÷','%','^','>','!'], 
+            ['(',')','[',']','='], ['删除','提交'] 
+        ];
+        keyLayout.forEach((rowKeys) => {
+            const rowDiv = document.createElement('div'); rowDiv.className = 'keyboard-row';
+            rowKeys.forEach(keyText => {
+                const key = document.createElement('div'); key.className = 'key'; key.textContent = keyText;
+                let internalKeyValue = keyText;
+                if (keyText === '×') internalKeyValue = '*';
+                if (keyText === '÷') internalKeyValue = '/';
+
+                if (keyText === '删除') { key.classList.add('wide'); key.addEventListener('click', handleDelete); }
+                else if (keyText === '提交') { key.classList.add('super-wide'); key.addEventListener('click', handleSubmit); }
+                else { 
+                    key.dataset.char = internalKeyValue; 
+                    key.addEventListener('click', (event) => handleKeyPress(internalKeyValue, event.currentTarget)); 
+                }
+                addKeyAnimationListeners(key); rowDiv.appendChild(key);
+            });
+            keyboard.appendChild(rowDiv);
+        });
+    }
+    function addKeyAnimationListeners(keyEl) {
+        keyEl.addEventListener('mousedown', () => keyEl.classList.add('pressed'));
+        keyEl.addEventListener('mouseup', () => keyEl.classList.remove('pressed'));
+        keyEl.addEventListener('mouseleave', () => keyEl.classList.remove('pressed'));
+        keyEl.addEventListener('touchstart', () => keyEl.classList.add('pressed'), {passive: true});
+        keyEl.addEventListener('touchend', () => keyEl.classList.remove('pressed'));
+    }
+    function resetKeyboardColors() { document.querySelectorAll('.key').forEach(k => k.classList.remove('correct','present','absent', 'disabled-permanently')); }
+    
+    function startGame(newTargetEquation, newDifficultyKey) {
+        gameActive = true;
+        currentRow = 0;
+        currentCol = 0;
+    
+        if (newTargetEquation && newDifficultyKey && difficultySetting[newDifficultyKey]) {
+            targetEquation = newTargetEquation;
+            currentDifficulty = newDifficultyKey;
+            isCustomLevel = true; 
+        } else {
+            isCustomLevel = false; 
+            const savedDiff = localStorage.getItem('sumzleDifficulty');
+            if (difficultySetting[savedDiff]) {
+                currentDifficulty = savedDiff;
+            } else {
+                 currentDifficulty = 'medium'; 
+            }
+            targetEquation = generateRandomEquation();
+        }
+        
+        ROWS = difficultySetting[currentDifficulty].attempts;
+        COLS = targetEquation.length;
+        guessedEquation = Array(COLS).fill('');
+        initBoard();
+        initKeyboard(); 
+        resetKeyboardColors();
+        updateDifficultyDisplay();
+    }
+    
+    function resetGame() {
+        isCustomLevel = false; 
+        const savedDiff = localStorage.getItem('sumzleDifficulty');
+        if (difficultySetting[savedDiff]) {
+            currentDifficulty = savedDiff;
+        } else {
+            currentDifficulty = 'medium'; 
+        }
+        ROWS = difficultySetting[currentDifficulty].attempts;
+        startGame(null, null);
+    }
+
+    function updateStatsDisplay() {
+        const lbls = ['简单','中等','困难','总体'];
+        const pD = [stats.byDifficulty.easy.gamesPlayed, stats.byDifficulty.medium.gamesPlayed, stats.byDifficulty.hard.gamesPlayed, stats.total.gamesPlayed];
+        const wD = [stats.byDifficulty.easy.gamesWon, stats.byDifficulty.medium.gamesWon, stats.byDifficulty.hard.gamesWon, stats.total.gamesWon];
+        const data = { labels: lbls, datasets: [ { label: '已玩', data: pD, backgroundColor: 'rgba(201,180,88,0.6)', borderColor: 'rgba(201,180,88,1)', borderWidth:1 }, { label: '获胜', data: wD, backgroundColor: 'rgba(106,170,100,0.6)', borderColor: 'rgba(106,170,100,1)', borderWidth:1 } ] };
+        const cfg = { type:'bar',data:data,options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,grace:'5%'}},plugins:{title:{display:true,text:`最佳连胜: ${stats.total.bestStreak} | 当前连胜: ${stats.total.currentStreak}`,font:{size:14}},tooltip:{callbacks:{afterLabel: (ctx)=>{if(ctx.datasetIndex===1){const pl=pD[ctx.dataIndex];const wn=wD[ctx.dataIndex];return `胜率: ${pl>0?Math.round((wn/pl)*100):0}%`;}}}}}}};
+        const chartEl = document.getElementById('statsChart');
+        if(statsChartInstance) statsChartInstance.destroy();
+        if(chartEl) statsChartInstance = new Chart(chartEl,cfg);
+        const gpEl=document.getElementById('gamesPlayed'); if(gpEl)gpEl.textContent=stats.total.gamesPlayed;
+        const gwEl=document.getElementById('gamesWon'); if(gwEl)gwEl.textContent=stats.total.gamesWon;
+        const csEl=document.getElementById('currentStreak'); if(csEl)csEl.textContent=stats.total.currentStreak;
+    }
+    function clearStatistics() { 
+        showModal('confirmClearStatsModal');
+    }
+    
+    document.getElementById('executeClearStatsBtn').addEventListener('click', () => {
+        stats = JSON.parse(JSON.stringify(initialStats));
+        saveStats();
+        updateStatsDisplay();
+        hideModal('confirmClearStatsModal');
+        showMessage("统计数据已清空");
+    });
+
+    document.getElementById('cancelClearStatsBtn').addEventListener('click', () => {
+        hideModal('confirmClearStatsModal');
+    });
+
+    function handleKeyPress(char, keyElement = null) {
+        if (!gameActive || currentCol >= COLS) return;
+        if (keyElement && keyElement.classList.contains('disabled-permanently')) return;
+
+        const targetColForUpdate = currentCol;
+        const tile = document.getElementById(`tile-${currentRow}-${targetColForUpdate}`);
+        if (!tile) return;
+        
+        currentCol++;
+
+        const actualCharUpdate = () => {
+            guessedEquation[targetColForUpdate] = char;
+            tile.textContent = displayChar(char);
+            tile.classList.add('filled', 'pop');
+            setTimeout(() => tile.classList.remove('pop'), 150);
+        };
+
+        if (keyElement && window.getComputedStyle(keyElement).display !== 'none') {
+            const flyingChar = document.createElement('div');
+            flyingChar.textContent = displayChar(char);
+            flyingChar.classList.add('flying-char-effect');
+            
+            const keyStyle = window.getComputedStyle(keyElement);
+            flyingChar.style.fontSize = keyStyle.fontSize;
+            flyingChar.style.fontWeight = keyStyle.fontWeight;
+            flyingChar.style.fontFamily = keyStyle.fontFamily;
+            flyingChar.style.padding = keyStyle.padding;
+            flyingChar.style.backgroundColor = keyStyle.backgroundColor;
+            flyingChar.style.color = keyStyle.color;
+            flyingChar.style.borderRadius = keyStyle.borderRadius;
+
+            const keyRect = keyElement.getBoundingClientRect();
+            const tileRect = tile.getBoundingClientRect();
+
+            flyingChar.style.left = `${keyRect.left}px`;
+            flyingChar.style.top = `${keyRect.top}px`;
+            flyingChar.style.width = `${keyRect.width}px`;
+            flyingChar.style.height = `${keyRect.height}px`;
+            
+            document.body.appendChild(flyingChar);
+            void flyingChar.offsetWidth;
+
+            const targetLeft = tileRect.left + (tileRect.width - keyRect.width) / 2;
+            const targetTop = tileRect.top + (tileRect.height - keyRect.height) / 2;
+            const translateX = targetLeft - keyRect.left;
+            const translateY = targetTop - keyRect.top;
+
+            flyingChar.style.transform = `translate(${translateX}px, ${translateY}px) scale(0.5)`;
+            flyingChar.style.opacity = '0';
+
+            flyingChar.addEventListener('transitionend', () => {
+                if (flyingChar.parentElement) {
+                    flyingChar.parentElement.removeChild(flyingChar);
+                }
+                actualCharUpdate();
+            }, { once: true });
+        } else {
+            actualCharUpdate();
+        }
+    }
+
+    function handleDelete() {
+        if (!gameActive || currentCol <= 0) return;
+        currentCol--; 
+        guessedEquation[currentCol] = '';
+        const tile = document.getElementById(`tile-${currentRow}-${currentCol}`);
+        tile.textContent = ''; tile.classList.remove('filled');
+    }
+    function safeEval(expr) {
+        let safeExpr = expr;
+        for (let k=0; k<3; k++) safeExpr = safeExpr.replace(/\[(.*?)\]/g, (match, innerExpr) => `Math.floor((${innerExpr}))`);
+        for (let i=0; i<3; i++) { 
+             safeExpr = safeExpr.replace(/(\d+)!/g, "factorial($1)");
+             safeExpr = safeExpr.replace(/\(([^()!]+)\)!/g, (match, innerExpr) => `factorial((${innerExpr}))`);
+        }
+        safeExpr = safeExpr.replace(/\^/g, '**');
+        const evalAllowedChars = /^[0-9+\-*/%()!^*.<>\sMathfloorctilE]+$/i;
+        if (!evalAllowedChars.test(safeExpr.replace(/,/g, ''))) throw new Error("Invalid chars for eval.");
+        try { return Function('factorial', 'return (' + safeExpr + ')')(window.factorial); } catch (e) { throw e; }
+    }
+    function checkBrackets(exprString) {
+        const stack = []; const map = { '(': ')', '[': ']' };
+        for (let char of exprString) {
+            if (char === '(' || char === '[') stack.push(char);
+            else if (char === ')' || char === ']') {
+                if (stack.length === 0) return false; 
+                const lastOpen = stack.pop(); if (map[lastOpen] !== char) return false; 
+            }
+        }
+        return stack.length === 0; 
+    }
+
+    function checkModuloOperation(exprString) {
+        const parts = exprString.split('%');
+        if (parts.length > 1) {
+            for (let i = 1; i < parts.length; i++) {
+                let divisorPart = "";
+                let depth = 0;
+                for (let j = 0; j < parts[i].length; j++) {
+                    const char = parts[i][j];
+                    if (char === '(' || char === '[') depth++;
+                    else if (char === ')' || char === ']') depth--;
+                    
+                    if (depth < 0) break; 
+                    
+                    divisorPart += char;
+                    
+                    if (depth === 0 && (j === parts[i].length - 1 || !'0123456789.()[]'.includes(parts[i][j+1])) ) {
+                        break;
+                    }
+                }
+
+                if (divisorPart) {
+                    try {
+                        const divVal = safeEval(divisorPart);
+                        if (divVal === 0 || !Number.isInteger(divVal)) {
+                             return false; 
+                        }
+                    } catch (e) { return false; }
+                } else { return false; }
+            }
+        }
+        return true;
+    }
+
+    function isValidEquation(equationArray, isGenerationContext = false) {
+        const cleanEquation = equationArray.join('');
+        if (!isGenerationContext && cleanEquation.includes('.')) { 
+            showMessage("输入不能包含小数点"); 
+            return false; 
+        }
+
+        if (!isGenerationContext && /(?<![\.\d])0\d+/.test(cleanEquation)) {
+            showMessage("数字不能以0开头 (除非是0本身)");
+            return false;
+        }
+
+        if (!isGenerationContext && !checkModuloOperation(cleanEquation)) {
+            showMessage("取模运算中除数不能为0或小数");
+            return false;
+        }
+
+        let mainOp = null, mainOpIndex = -1, depth = 0;
+        for(let i = 0; i < cleanEquation.length; i++) {
+            const char = cleanEquation[i];
+            if (char === '(' || char === '[') depth++;
+            else if (char === ')' || char === ']') depth--;
+            else if (depth === 0 && (char === '=' || char === '>')) { 
+                if (mainOp !== null) { if (!isGenerationContext) showMessage("只能有一个主操作符"); return false; } 
+                mainOp = char; mainOpIndex = i;
+            }
+        }
+
+        if (!mainOp) { if (!isGenerationContext) showMessage("必须包含 = 或 >"); return false; } 
+        const leftSide = cleanEquation.substring(0, mainOpIndex);
+        const rightSide = cleanEquation.substring(mainOpIndex + 1);
+
+        if (leftSide.length === 0 || rightSide.length === 0) { if (!isGenerationContext) showMessage("操作符两边需有表达式"); return false; }
+        if (!checkBrackets(leftSide) || !checkBrackets(rightSide)) { if (!isGenerationContext) showMessage("括号不匹配"); return false; }
+        
+        try {
+            const evalLeft = safeEval(leftSide); const evalRight = safeEval(rightSide);
+            if (typeof evalLeft !== 'number' || typeof evalRight !== 'number' || isNaN(evalLeft) || isNaN(evalRight)) {
+                if (!isGenerationContext) showMessage("表达式计算结果无效"); return false;
+            }
+            let statementTrue = false;
+            if (mainOp === '=') statementTrue = Math.abs(evalLeft - evalRight) < 0.0001;
+            else if (mainOp === '>') statementTrue = evalLeft > evalRight; 
+
+            if (!statementTrue) { if (!isGenerationContext) showMessage("等式/不等式不成立"); return false; }
+            if (!Number.isInteger(evalLeft) || !Number.isInteger(evalRight)) {
+                 if (Math.abs(evalLeft - Math.round(evalLeft)) > 0.0001 || Math.abs(evalRight - Math.round(evalRight)) > 0.0001) {
+                    if (!isGenerationContext) showMessage("结果必须为整数"); return false; 
+                 }
+            }
+        } catch (e) { if (!isGenerationContext) showMessage(`无效表达式: ${e.message.substring(0,20)}`); return false; }
+        return true;
+    }
+
+    function triggerConfetti() {
+        const confettiContainer = document.getElementById('confettiOverlay');
+        if (!confettiContainer) return;
+        for (let i = 0; i < 60; i++) {
+            const confettiPiece = document.createElement('div');
+            confettiPiece.classList.add('confetti-piece');
+            confettiPiece.style.width = `${getRandomInt(6, 12)}px`;
+            confettiPiece.style.height = confettiPiece.style.width;
+            confettiPiece.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
+            confettiPiece.style.left = `${Math.random() * 100}%`;
+            confettiPiece.style.top = `${-20 - Math.random() * 30}%`;
+            confettiPiece.style.opacity = '0';
+            confettiPiece.style.transform = `rotate(${Math.random() * 360}deg)`;
+            
+            const animationDuration = Math.random() * 2 + 4.0; 
+            confettiPiece.style.transitionDuration = `${animationDuration}s, ${animationDuration}s, ${animationDuration * 0.4}s`;
+            
+            confettiContainer.appendChild(confettiPiece);
+
+            setTimeout(() => {
+                confettiPiece.style.opacity = '1';
+                confettiPiece.style.top = '110%'; 
+                confettiPiece.style.transform = `rotate(${Math.random() * 720 + 360}deg) translateX(${Math.random()*150-75}px)`;
+            }, 50 + Math.random() * 100); 
+
+            setTimeout(() => {
+                if (confettiPiece.parentElement) {
+                    confettiPiece.parentElement.removeChild(confettiPiece);
+                }
+            }, animationDuration * 1000 + 200);
+        }
+    }
+
+    let messageTimeout;
+    function handleSubmit() {
+        if (!gameActive) return;
+        const currentBoardRowElement = document.querySelector(`.board .row:nth-child(${currentRow + 1})`);
+        
+        if (currentCol < COLS) {
+            if (currentBoardRowElement) currentBoardRowElement.classList.add('invalid-shake');
+            setTimeout(() => { if (currentBoardRowElement) currentBoardRowElement.classList.remove('invalid-shake'); }, 500);
+            showMessage("请填满当前行"); return;
+        }
+        if (!isValidEquation(guessedEquation)) {
+            if (currentBoardRowElement) currentBoardRowElement.classList.add('invalid-shake');
+            setTimeout(() => { if (currentBoardRowElement) currentBoardRowElement.classList.remove('invalid-shake'); }, 500);
+            return; 
+        }
+        checkGuess(); const guessString = guessedEquation.join('');
+        
+        if (guessString === targetEquation) {
+            gameActive = false;
+            if (!isCustomLevel) { 
+                stats.total.gamesPlayed++; stats.total.gamesWon++; stats.total.currentStreak++;
+                stats.total.bestStreak = Math.max(stats.total.bestStreak, stats.total.currentStreak);
+                stats.byDifficulty[currentDifficulty].gamesPlayed++; stats.byDifficulty[currentDifficulty].gamesWon++;
+                saveStats();
+            }
+            const tilesToDance = currentBoardRowElement ? Array.from(currentBoardRowElement.children) : [];
+            tilesToDance.forEach((tile, i) => { setTimeout(() => tile.classList.add('win-dance'), i * 100); });
+            showMessage("恭喜你猜对了！ 🎉", 3000); updateStatsDisplay(); 
+            triggerConfetti();
+            document.getElementById('exportImageBtn').style.display = 'inline-block';
+            document.getElementById('shareLevelBtn').style.display = 'inline-block';
+            setTimeout(() => showModal('gameOverModal', true), (COLS * 120) + 800); return;
+        }
+        currentRow++; currentCol = 0; guessedEquation = Array(COLS).fill('');
+        if (currentRow >= ROWS) {
+            gameActive = false; 
+            if (!isCustomLevel) { 
+                stats.total.gamesPlayed++; stats.total.currentStreak = 0;
+                stats.byDifficulty[currentDifficulty].gamesPlayed++; saveStats();
+            }
+            if (currentBoardRowElement) currentBoardRowElement.classList.add('invalid-shake');
+            setTimeout(() => { if (currentBoardRowElement) currentBoardRowElement.classList.remove('invalid-shake'); }, 600);
+            const displayTargetEquation = targetEquation.replace(/\*/g, '×').replace(/\//g, '÷');
+            showMessage(`游戏结束! 答案: ${displayTargetEquation} 🙁`, 4000); updateStatsDisplay();
+            document.getElementById('exportImageBtn').style.display = 'none';
+            document.getElementById('shareLevelBtn').style.display = 'inline-block';
+            setTimeout(() => showModal('gameOverModal', false), (COLS * 120) + 800);
+        }
+    }
+    function checkGuess() {
+        const targetChars = [...targetEquation]; const guessChars = [...guessedEquation]; const resultStates = Array(COLS).fill('absent');
+        for (let i = 0; i < COLS; i++) if (guessChars[i] === targetChars[i]) { resultStates[i] = 'correct'; targetChars[i] = null; }
+        for (let i = 0; i < COLS; i++) {
+            if (resultStates[i] !== 'correct') {
+                const indexInTarget = targetChars.indexOf(guessChars[i]);
+                if (indexInTarget !== -1) { resultStates[i] = 'present'; targetChars[indexInTarget] = null; }
+            }
+        }
+        const boardRow = document.querySelector(`.row:nth-child(${currentRow + 1})`);
+        if (boardRow) {
+            const tiles = boardRow.children;
+            for (let i = 0; i < COLS; i++) {
+                const tile = tiles[i];
+                setTimeout(() => {
+                    tile.classList.add('flip-reveal'); 
+                    setTimeout(() => { 
+                        tile.classList.remove('absent','present','correct','filled'); 
+                        tile.classList.add(resultStates[i]);
+                        tile.style.borderColor = ''; 
+                    }, 300); 
+                }, i * 100); 
+            }
+        }
+        updateKeyboardColors(guessChars, resultStates);
+    }
+    function updateKeyboardColors(chars, results) {
+        for (let i = 0; i < chars.length; i++) {
+            const char = chars[i]; const result = results[i]; if (!char) continue;
+            document.querySelectorAll(`.key[data-char="${char}"]`).forEach(key => {
+                const kcl = key.classList;
+
+                if (char === '>' && result === 'absent' && !kcl.contains('correct') && !kcl.contains('present')) { 
+                    kcl.add('disabled-permanently'); 
+                    kcl.remove('present','correct','absent'); 
+                    return; 
+                }
+                
+                if (kcl.contains('disabled-permanently')) return;
+
+                if (result === 'correct') { kcl.remove('present','absent'); kcl.add('correct'); }
+                else if (result === 'present' && !kcl.contains('correct')) { kcl.remove('absent'); kcl.add('present'); }
+                else if (result === 'absent' && !kcl.contains('correct') && !kcl.contains('present')) kcl.add('absent');
+            });
+        }
+    }
+    
+    function showMessage(text, duration = 2000) {
+        const msgEl = document.getElementById('message');
+        clearTimeout(messageTimeout);
+        msgEl.textContent = text;
+        msgEl.classList.remove('show-message'); 
+        void msgEl.offsetWidth; 
+        msgEl.classList.add('show-message');
+        messageTimeout = setTimeout(() => {
+            msgEl.classList.remove('show-message');
+        }, duration);
+    }
+
+    function showModal(modalId, isWinArgForGameOver) {
+        const modal = document.getElementById(modalId); if (!modal) return;
+        if (modalId === 'gameOverModal') {
+            const title = document.getElementById('gameOverTitle'); const msg = document.getElementById('gameOverMessage');
+            const displayTargetEquation = targetEquation.replace(/\*/g, '×').replace(/\//g, '÷');
+            if (isWinArgForGameOver) { title.innerHTML = '🏆 恭喜！🏆'; msg.textContent = `你用了 ${currentRow+1} 次猜中: ${displayTargetEquation}`; }
+            else { title.innerHTML = '💔 游戏结束 💔'; msg.textContent = `正确答案: ${displayTargetEquation}`; }
+        }
+        modal.style.display = 'flex'; 
+        void modal.offsetWidth; 
+        modal.classList.add('show');
+    }
+    function hideModal(modalId) {
+        const modal = document.getElementById(modalId); if (!modal || !modal.classList.contains('show')) return;
+        modal.classList.remove('show'); 
+        setTimeout(() => {
+            modal.style.display = 'none'; 
+        }, 300); 
+    }
+    function saveStats() { localStorage.setItem('sumzleStats', JSON.stringify(stats)); }
+    function saveDifficulty() { localStorage.setItem('sumzleDifficulty', currentDifficulty); }
+
+    document.getElementById('newGameBtn').addEventListener('click', () => { hideModal('gameOverModal'); resetGame(); });
+    
+    document.getElementById('restartBtn').addEventListener('click', () => {
+        if (gameActive && (currentRow > 0 || currentCol > 0 || isCustomLevel) ) {
+             showModal('surrenderModal');
+        } else {
+             resetGame();
+        }
+    });
+
+    document.getElementById('confirmSurrenderBtn').addEventListener('click', () => {
+        gameActive = false; 
+        if (!isCustomLevel) { 
+            stats.total.gamesPlayed++;
+            stats.total.currentStreak = 0;
+            stats.byDifficulty[currentDifficulty].gamesPlayed++;
+            saveStats();
+            updateStatsDisplay();
+        }
+        hideModal('surrenderModal');
+        showModal('gameOverModal', false); 
+    });
+    document.getElementById('cancelSurrenderBtn').addEventListener('click', () => {
+        hideModal('surrenderModal');
+    });
+
+    const menuToggleBtn = document.getElementById('menuToggleBtn');
+    const headerButtonsGroup = document.getElementById('headerButtonsGroup');
+    if(menuToggleBtn) {
+        menuToggleBtn.addEventListener('click', (event) => {
+            event.stopPropagation(); 
+            headerButtonsGroup.classList.toggle('show-menu');
+            menuToggleBtn.classList.toggle('active');
+        });
+    }
+    document.addEventListener('click', (event) => {
+        if (headerButtonsGroup && headerButtonsGroup.classList.contains('show-menu') && !headerButtonsGroup.contains(event.target) && event.target !== menuToggleBtn) {
+            headerButtonsGroup.classList.remove('show-menu');
+            if (menuToggleBtn) menuToggleBtn.classList.remove('active');
+        }
+    });
+
+
+    document.getElementById('settingsBtn').addEventListener('click', () => { showModal('settingsModal'); });
+    document.getElementById('closeSettingsBtn').addEventListener('click', () => hideModal('settingsModal'));
+    document.getElementById('statsBtn').addEventListener('click', () => { updateStatsDisplay(); showModal('statsModal'); });
+    document.getElementById('closeStatsBtn').addEventListener('click', () => hideModal('statsModal'));
+    document.getElementById('clearStatsBtn').addEventListener('click', clearStatistics);
+    
+    document.querySelectorAll('.difficulty-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            isCustomLevel = false; 
+            currentDifficulty = btn.dataset.difficulty; 
+            ROWS = difficultySetting[currentDifficulty].attempts;
+            saveDifficulty(); 
+            resetGame(); 
+            hideModal('settingsModal');
+        });
+    });
+
+    document.addEventListener('keydown', (e) => {
+        let activeModalId = null; document.querySelectorAll('.modal.show').forEach(m => activeModalId = m.id);
+        if (e.key === 'Escape' && activeModalId) { e.preventDefault(); hideModal(activeModalId); return; }
+        
+        const isTypingInModal = activeModalId === 'loadLevelModal' && document.activeElement === document.getElementById('levelCodeInput');
+        if (activeModalId && !isTypingInModal && e.key !== 'Enter') return;
+
+        if (validChars.includes(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1) {
+             if(!activeModalId || (activeModalId === 'loadLevelModal' && !isTypingInModal) ) { 
+                e.preventDefault(); 
+                const keyElement = document.querySelector(`.key[data-char="${e.key}"]`);
+                handleKeyPress(e.key, keyElement); 
+            }
+        } else if (e.key === 'Backspace') { 
+            if(!activeModalId || (activeModalId === 'loadLevelModal' && !isTypingInModal) ) { 
+                e.preventDefault(); handleDelete(); 
+            }
+        }
+        else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (activeModalId === 'gameOverModal') document.getElementById('newGameBtn').click();
+            else if (activeModalId === 'settingsModal') document.getElementById('closeSettingsBtn').click();
+            else if (activeModalId === 'statsModal') document.getElementById('closeStatsBtn').click();
+            else if (activeModalId === 'loadLevelModal') document.getElementById('submitLoadLevelBtn').click();
+            else if (activeModalId === 'surrenderModal') document.getElementById('confirmSurrenderBtn').click(); 
+            else if (activeModalId === 'confirmClearStatsModal') document.getElementById('executeClearStatsBtn').click();
+            else if (gameActive) handleSubmit();
+        }
+    });
+
+    function exportGameImage() {
+        const gameBoardElement = document.getElementById('board');
+        const headerElement = document.querySelector('header');
+        const tempContainer = document.createElement('div');
+        
+        tempContainer.style.padding = '20px';
+        tempContainer.style.paddingTop = '30px'; 
+        tempContainer.style.paddingBottom = '30px';
+        tempContainer.style.backgroundColor = getComputedStyle(document.body).backgroundColor;
+        tempContainer.style.width = 'max-content'; 
+        tempContainer.style.minWidth = '350px'; 
+        
+        const titleClone = headerElement.querySelector('.header-title').cloneNode(true);
+        titleClone.style.position = 'static';
+        titleClone.style.transform = 'none';
+        titleClone.style.left = 'auto';
+        titleClone.style.textAlign = 'center';
+        titleClone.style.width = '100%';
+        titleClone.style.marginBottom = '25px';
+        titleClone.style.fontSize = '1.8rem';
+        titleClone.style.fontWeight = 'bold';
+
+        const boardClone = gameBoardElement.cloneNode(true);
+        boardClone.id = 'boardCloneForExport'; 
+        boardClone.style.overflow = 'visible';
+        boardClone.style.maxWidth = 'none';
+        boardClone.style.width = gameBoardElement.scrollWidth + 'px';
+
+        const originalTiles = gameBoardElement.querySelectorAll('.tile');
+        const clonedTiles = boardClone.querySelectorAll('.tile');
+
+        clonedTiles.forEach((clonedTile, index) => {
+            const originalTile = originalTiles[index];
+            if (originalTile) {
+                const computedStyle = window.getComputedStyle(originalTile);
+                clonedTile.style.backgroundColor = computedStyle.backgroundColor;
+                clonedTile.style.color = computedStyle.color;
+                clonedTile.style.borderColor = computedStyle.borderColor;
+                clonedTile.style.borderStyle = computedStyle.borderStyle;
+                clonedTile.style.borderWidth = computedStyle.borderWidth;
+                clonedTile.textContent = originalTile.textContent;
+                
+                clonedTile.style.transform = 'none'; 
+                clonedTile.style.animation = 'none'; 
+
+                clonedTile.classList.remove('win-dance', 'flip-reveal', 'pop', 'filled');
+                
+                if (originalTile.classList.contains('correct')) clonedTile.classList.add('correct');
+                else if (originalTile.classList.contains('present')) clonedTile.classList.add('present');
+                else if (originalTile.classList.contains('absent')) clonedTile.classList.add('absent');
+            }
+        });
+        
+        const winMessage = document.createElement('p');
+        let difficultyText = difficultySetting[currentDifficulty].name;
+        winMessage.textContent = `Sumzle ${difficultyText} - ${currentRow + 1}/${ROWS} 尝试`;
+        winMessage.style.textAlign = 'center';
+        winMessage.style.marginTop = '25px';
+        winMessage.style.fontWeight = 'bold';
+        winMessage.style.fontSize = '1rem';
+        winMessage.style.color = getComputedStyle(document.documentElement).getPropertyValue('--color-text-secondary').trim();
+
+
+        tempContainer.appendChild(titleClone);
+        tempContainer.appendChild(boardClone);
+        tempContainer.appendChild(winMessage);
+        document.body.appendChild(tempContainer);
+
+        html2canvas(tempContainer, {
+            backgroundColor: getComputedStyle(document.body).backgroundColor,
+            useCORS: true,
+            scale: window.devicePixelRatio * 1.3, 
+            width: tempContainer.scrollWidth + 50,
+            height: tempContainer.scrollHeight,
+            windowWidth: tempContainer.scrollWidth,
+            windowHeight: tempContainer.scrollHeight,
+            logging: false, 
+            onclone: (clonedDocument) => {
+                const clonedBoardInDoc = clonedDocument.getElementById('boardCloneForExport');
+                if (clonedBoardInDoc) {
+                    clonedBoardInDoc.querySelectorAll('.tile').forEach(tile => {
+                        tile.style.animation = 'none !important';
+                        tile.style.transform = 'none !important';
+                        tile.classList.remove('win-dance', 'flip-reveal', 'pop');
+                    });
+                }
+            }
+        }).then(canvas => {
+            const image = canvas.toDataURL("image/png");
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = `Sumzle_Game_${new Date().toISOString().slice(0,10)}.png`;
+            link.click();
+            document.body.removeChild(tempContainer);
+            showMessage("图片已导出!", 2000);
+        }).catch(err => {
+            console.error("html2canvas error during export:", err); 
+            showMessage("导出图片失败. 查看控制台获取详情.", 3000);
+            if (tempContainer.parentElement) document.body.removeChild(tempContainer);
+        });
+    }
+    document.getElementById('exportImageBtn').addEventListener('click', () => { exportGameImage();});
+
+    function fallbackCopyTextToClipboard(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.width = "2em";
+        textArea.style.height = "2em";
+        textArea.style.padding = "0";
+        textArea.style.border = "none";
+        textArea.style.outline = "none";
+        textArea.style.boxShadow = "none";
+        textArea.style.background = "transparent";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                showMessage("关卡代码已复制!");
+            } else {
+                showMessage("复制失败.");
+            }
+        } catch (err) {
+            showMessage("复制失败: " + err);
+        }
+        document.body.removeChild(textArea);
+    }
+
+    document.getElementById('shareLevelBtn').addEventListener('click', () => {
+        const encoded = encodeLevel(targetEquation, currentDifficulty); 
+        if (encoded) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(encoded)
+                    .then(() => showMessage("关卡代码已复制!"))
+                    .catch(err => {
+                        console.warn("Clipboard API failed, trying fallback: ", err);
+                        fallbackCopyTextToClipboard(encoded);
+                    });
+            } else {
+                fallbackCopyTextToClipboard(encoded);
+            }
+        } else {
+            showMessage("生成分享代码失败!");
+        }
+    });
+
+    document.getElementById('loadLevelBtn').addEventListener('click', () => { showModal('loadLevelModal');});
+    document.getElementById('closeLoadLevelModalBtn').addEventListener('click', () => {
+        document.getElementById('levelCodeInput').value = '';
+        hideModal('loadLevelModal');
+    });
+    document.getElementById('submitLoadLevelBtn').addEventListener('click', () => {
+        const code = document.getElementById('levelCodeInput').value;
+        if (code) {
+            const decodedData = decodeLevel(code.trim());
+            if (decodedData && 
+                decodedData.equation.length >= MIN_EQUATION_LENGTH && 
+                decodedData.equation.length <= MAX_EQUATION_LENGTH &&
+                isValidEquation(decodedData.equation.split(''), true)) {
+                
+                isCustomLevel = true; 
+                startGame(decodedData.equation, decodedData.difficulty); 
+                saveDifficulty(); 
+                
+                hideModal('loadLevelModal');
+                document.getElementById('levelCodeInput').value = ''; 
+                showMessage(`已载入 ${difficultySetting[decodedData.difficulty].name} 难度分享关卡!`);
+            } else {
+                showMessage("无效或已损坏的关卡代码。");
+            }
+        }
+    });
+    
+    updateStatsDisplay(); 
+    resetGame(); 
+
+});
+</script>
+</body>
+</html>
