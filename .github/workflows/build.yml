@@ -1,0 +1,27 @@
+name: Build Tauri Android APK
+
+on:
+  push:
+    branches: [ "tauri" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build web assets
+        run: mkdir -p www && cp Sumzle.html www/index.html
+      - name: Build Tauri APK
+        run: npm run tauri android build -- --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: sumzle.apk
+          path: src-tauri/target/aarch64-linux-android/release/sumzle.apk
