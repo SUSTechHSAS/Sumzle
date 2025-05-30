@@ -1,22 +1,49 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Sumzle</title>
-
-    <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="pragma" content="no-cache">
-    <meta http-equiv="expires" content="0">
-    <script>
-        // 添加时间戳参数强制刷新
-        window.location.href = "Sumzle.html?t=" + new Date().getTime();
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sumzle Games</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .link-container {
+            display: flex;
+            gap: 20px;
+        }
+        .link-button {
+            display: inline-block;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+        .link-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
-    <noscript>
-        <h1>Sumzle</h1>
-        <p>您的浏览器不支持JavaScript，请<a href="Sumzle.html">点击这里进入</a>。</p>
-    </noscript>
-    <p>如果页面没有自动跳转，请<a href="Sumzle.html">点击这里</a></p>
+    <h1>Welcome to Sumzle Games</h1>
+    <div class="link-container">
+        <a href="Sumzle.html" class="link-button">Play Sumzle</a>
+        <a href="SumzleAK.html" class="link-button">Sumzle Solver</a>
+    </div>
 </body>
 </html>
